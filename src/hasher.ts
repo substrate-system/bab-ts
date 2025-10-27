@@ -22,19 +22,21 @@ export class BabHasher {
     private frontier: TreeNode[]
     private completedBytes: number
     private completedChunks: number
+    private chunkSize: number
 
-    constructor(keyed: boolean = false, key?: number[]) {
+    constructor (keyed: boolean = false, key?: number[], chunkSize?: number) {
         if (keyed && key) {
-            const contexts = createKeyedContexts(key)
+            const contexts = createKeyedContexts(key, chunkSize)
             this.chunkContext = contexts.chunkContext
             this.innerContext = contexts.innerContext
         } else {
-            const contexts = createContexts()
+            const contexts = createContexts(chunkSize)
             this.chunkContext = contexts.chunkContext
             this.innerContext = contexts.innerContext
         }
 
-        this.partialChunk = new Uint8Array(CHUNK_SIZE)
+        this.chunkSize = this.chunkContext.getChunkSize()
+        this.partialChunk = new Uint8Array(this.chunkSize)
         this.partialChunkLen = 0
         this.frontier = []
         this.completedBytes = 0
@@ -42,22 +44,22 @@ export class BabHasher {
     }
 
     // Create a standard (unkeyed) hasher
-    static create(): BabHasher {
-        return new BabHasher(false)
+    static create (chunkSize?: number): BabHasher {
+        return new BabHasher(false, undefined, chunkSize)
     }
 
     // Create a keyed hasher
-    static createKeyed(key: number[]): BabHasher {
-        return new BabHasher(true, key)
+    static createKeyed (key: number[], chunkSize?: number): BabHasher {
+        return new BabHasher(true, key, chunkSize)
     }
 
     // Write data to the hasher
-    write(data: Uint8Array): void {
+    write (data: Uint8Array): void {
         let offset = 0
 
         while (offset < data.length) {
             // Fill the partial chunk
-            const remainingInChunk = CHUNK_SIZE - this.partialChunkLen
+            const remainingInChunk = this.chunkSize - this.partialChunkLen
             const remainingInData = data.length - offset
             const toCopy = Math.min(remainingInChunk, remainingInData)
 
@@ -66,14 +68,14 @@ export class BabHasher {
             offset += toCopy
 
             // If we've completed a chunk, process it
-            if (this.partialChunkLen === CHUNK_SIZE) {
+            if (this.partialChunkLen === this.chunkSize) {
                 this.progressOrCompleteCurrentChunk()
             }
         }
     }
 
     // Process a completed chunk
-    private progressOrCompleteCurrentChunk(): void {
+    private progressOrCompleteCurrentChunk (): void {
         // Hash the completed chunk
         const chunkData = this.partialChunk.slice(0, this.partialChunkLen)
         const label = hashChunk(chunkData, false, this.chunkContext)
@@ -101,7 +103,7 @@ export class BabHasher {
     }
 
     // Update the frontier when a new leaf is added
-    private updateFrontierForNewLeaf(node: TreeNode): void {
+    private updateFrontierForNewLeaf (node: TreeNode): void {
         const numCompletedChunks = this.numberOfCompletedChunks()
 
         // Merge nodes in the frontier according to the binary representation
@@ -136,12 +138,12 @@ export class BabHasher {
     }
 
     // Get the number of completed chunks
-    private numberOfCompletedChunks(): number {
+    private numberOfCompletedChunks (): number {
         return this.completedChunks
     }
 
     // Finish hashing and return the digest
-    finish(): BabDigest {
+    finish (): BabDigest {
         // If no data was written, return hash of empty string
         if (this.completedBytes === 0 && this.partialChunkLen === 0) {
             const emptyLabel = hashChunk(new Uint8Array(0), true, this.chunkContext)
@@ -211,7 +213,7 @@ export class BabHasher {
     }
 
     // Recompute a tree node as root (with isRoot=true)
-    private recomputeAsRoot(node: TreeNode): Uint8Array {
+    private recomputeAsRoot (node: TreeNode): Uint8Array {
         if (node.isLeaf) {
             // Recompute the leaf with isRoot=true
             if (node.chunkData) {
@@ -236,6 +238,6 @@ export class BabHasher {
 }
 
 // Check if the k-th bit is set in a number
-function isBitSet(n: number, k: number): boolean {
+function isBitSet (n: number, k: number): boolean {
     return ((n >> k) & 1) === 1
 }

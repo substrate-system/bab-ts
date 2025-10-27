@@ -29,17 +29,17 @@ export const ROOT = 1 << 3
 export const KEYED_HASH = 1 << 4
 
 // Rotate right
-function rotr32(x: number, n: number): number {
+function rotr32 (x: number, n: number): number {
     return (x >>> n) | (x << (32 - n))
 }
 
 // Add two 32-bit integers (with overflow wrapping)
-function wrappingAdd(a: number, b: number): number {
+function wrappingAdd (a: number, b: number): number {
     return (a + b) >>> 0
 }
 
 // The g mixing function
-function g(state: number[], a: number, b: number, c: number, d: number, mx: number, my: number): void {
+function g (state: number[], a: number, b: number, c: number, d: number, mx: number, my: number): void {
     state[a] = wrappingAdd(wrappingAdd(state[a], state[b]), mx)
     state[d] = rotr32(state[d] ^ state[a], 16)
     state[c] = wrappingAdd(state[c], state[d])
@@ -51,7 +51,7 @@ function g(state: number[], a: number, b: number, c: number, d: number, mx: numb
 }
 
 // One round of compression
-function round(state: number[], msg: number[], schedule: number[]): void {
+function round (state: number[], msg: number[], schedule: number[]): void {
     // Column mixing
     g(state, 0, 4, 8, 12, msg[schedule[0]], msg[schedule[1]])
     g(state, 1, 5, 9, 13, msg[schedule[2]], msg[schedule[3]])
@@ -66,7 +66,7 @@ function round(state: number[], msg: number[], schedule: number[]): void {
 }
 
 // Prepare initial state and run 7 rounds
-function compressPre(
+function compressPre (
     chainingValue: number[],
     blockWords: number[],
     counter: bigint,
@@ -88,7 +88,7 @@ function compressPre(
 }
 
 // Finalize compression by XORing state halves
-function compressInPlace(
+function compressInPlace (
     chainingValue: number[],
     blockWords: number[],
     counter: bigint,
@@ -103,7 +103,7 @@ function compressInPlace(
 }
 
 // Convert 64 bytes to 16 u32 words (little-endian)
-function wordsFromLeBytes64(bytes: Uint8Array): number[] {
+function wordsFromLeBytes64 (bytes: Uint8Array): number[] {
     const words: number[] = []
     for (let i = 0; i < 16; i++) {
         words.push(
@@ -117,7 +117,7 @@ function wordsFromLeBytes64(bytes: Uint8Array): number[] {
 }
 
 // Convert 8 u32 words to 32 bytes (little-endian)
-function leBytesFromWords32(words: number[]): Uint8Array {
+function leBytesFromWords32 (words: number[]): Uint8Array {
     const bytes = new Uint8Array(32)
     for (let i = 0; i < 8; i++) {
         bytes[i * 4] = words[i] & 0xFF
@@ -129,7 +129,7 @@ function leBytesFromWords32(words: number[]): Uint8Array {
 }
 
 // Main hash1 function - processes input data with block padding for the final block
-export function hash1(
+export function hash1 (
     chainingValue: number[],
     data: Uint8Array,
     counter: bigint,
