@@ -12,13 +12,12 @@
 
 [Bab](https://worm-blossom.github.io/bab/) in TypeScript.
 
-A TypeScript implementation of the Bab hash function family, specifically the WILLIAM3 instantiation. Bab is a cryptographic hash function designed for peer-to-peer content-addressable storage systems that enables incremental verification during streaming downloads.
+A TypeScript version of the Bab library,
+specifically the WILLIAM3 instantiation. Bab is a cryptographic hash
+function designed for peer-to-peer content-addressable storage systems.
+It enables incremental verification for streaming downloads.
 
-✅ **Complete implementation** with batch and incremental hashing
-✅ **All tests passing** (24/24)
-✅ **Type-safe** TypeScript with full type definitions
-
-[See a live demo](https://substrate-system.github.io/bab-ts/)
+[I made a kind of elaborate demo page for this](https://substrate-system.github.io/bab-ts/).
 
 <details><summary><h2>Contents</h2></summary>
 
