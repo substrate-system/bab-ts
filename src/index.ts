@@ -14,7 +14,7 @@ export {
     createKeyedContexts
 } from './william3.js'
 export { buildVerificationMetadata, verifyChunk } from './verify.js'
-export type { ChunkVerificationData } from './verify.js'
+export type { ChunkVerificationData, ChunkMetadataLight } from './verify.js'
 
 // Re-export compression primitives
 export {

@@ -194,16 +194,29 @@ export function buildVerificationMetadata (
     }
 }
 
+export type ChunkMetadataLight = {
+    siblingLabels:Uint8Array[];
+    siblingDirections:number[];
+}
+
+buildVerificationMetadata.lighten = function (
+    chunkMetadata:ChunkVerificationData
+):ChunkMetadataLight {
+    return {
+        siblingLabels: chunkMetadata.siblingLabels,
+        siblingDirections: chunkMetadata.siblingDirections,
+    }
+}
+
 // Verify a chunk against a trusted root digest
 export function verifyChunk (
     chunkData:Uint8Array,
+    metadata:ChunkMetadataLight,
     totalChunks:number,
-    siblingLabels:Uint8Array[],
-    siblingDirections:number[],
-    trustedRoot:BabDigest,
+    trustedRootHash:BabDigest,
     chunkSize?:number,
-    mergeLengths?:number[]
-): boolean {
+    mergeLengths?:number[],
+):boolean {
     const { chunkContext, innerContext } = createContexts(chunkSize)
 
     // Compute chunk label
@@ -212,16 +225,18 @@ export function verifyChunk (
 
     // If it's the only chunk, compare directly
     if (isOnlyChunk) {
-        return trustedRoot.equals(new BabDigest(currentLabel))
+        return trustedRootHash.equals(new BabDigest(currentLabel))
     }
 
     // Otherwise, reconstruct the path to the root using sibling labels
-    for (let i = siblingLabels.length - 1; i >= 0; i--) {
-        const siblingLabel = siblingLabels[i]
-        const isOnLeft = siblingDirections[i] === 0
+    for (let i = metadata.siblingLabels.length - 1; i >= 0; i--) {
+        const siblingLabel = metadata.siblingLabels[i]
+        const isOnLeft = metadata.siblingDirections[i] === 0
 
         // Get the combined length for this merge point
-        const combinedLength = mergeLengths ? BigInt(mergeLengths[i]) : BigInt(0)
+        const combinedLength = (mergeLengths ?
+            BigInt(mergeLengths[i]) :
+            BigInt(0))
 
         let leftLabel:Uint8Array
         let rightLabel:Uint8Array
@@ -247,5 +262,5 @@ export function verifyChunk (
     }
 
     // Compare with trusted root
-    return trustedRoot.equals(new BabDigest(currentLabel))
+    return trustedRootHash.equals(new BabDigest(currentLabel))
 }

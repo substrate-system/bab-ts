@@ -6,12 +6,11 @@ import Debug from '@substrate-system/debug'
 import { concat } from 'uint8arrays'
 import {
     batchHash,
-    BabHasher,
     buildVerificationMetadata,
     verifyChunk,
-    type ChunkVerificationData,
     BabDigest
 } from '../src/index.js'
+import { type ChunkMetadataLight } from '../src/verify.js'
 const debug = Debug(import.meta.env.DEV)
 
 const NBSP = '\u00A0'
@@ -28,7 +27,7 @@ const Example:FunctionComponent = function () {
     // Verification state
     const verifyInputs = useSignal<string[]>(['hello', ' ', 'world'])
     const trustedRoot = useSignal<string>('')
-    const verificationMetadata = useSignal<ChunkVerificationData[]>([])
+    const verificationMetadata = useSignal<ChunkMetadataLight[]>([])
     const verificationResults = useSignal<Array<boolean|null>>([null, null, null])
     const verificationResultClasses = useComputed<(string)[]>(() => {
         return verificationResults.value.map(r => {
@@ -73,50 +72,6 @@ const Example:FunctionComponent = function () {
         }
     }
 
-    const hashIncremental = useCallback(function hashIncremental () {
-        try {
-            // Pad each input to exactly CHUNK_SIZE bytes
-            const data1 = padToChunkSize(incrementals.value[0])
-            const data2 = padToChunkSize(incrementals.value[1])
-            const data3 = padToChunkSize(incrementals.value[2])
-
-            debug('padded', data1)
-
-            const hasher = BabHasher.create(CHUNK_SIZE)
-            hasher.write(data1)
-            hasher.write(data2)
-            hasher.write(data3)
-            const digest = hasher.finish()
-
-            incrementalOutput.value = digest.toHex()
-        } catch (_err) {
-            const err = _err as Error
-            debug('errr', err)
-        }
-    }, [])
-
-    const hashIncrement = useCallback((ev:MouseEvent) => {
-        ev.preventDefault()
-        const hasher = BabHasher.create(CHUNK_SIZE)
-        const { increment } = (ev.target as HTMLButtonElement).dataset
-        debug('hashing an increment', increment)
-        const i = parseInt(increment!)
-
-        debug('index', i)
-
-        const paddedData = padToChunkSize(incrementals.value[i]!)
-        hasher.write(paddedData)
-
-        // Show the chunk hash after writing
-        // const chunkHashes = [...incrementalHashes.value]
-        // chunkHashes[i] = `Chunk ${i + 1} written (${incrementals.value[i]!.length} bytes ${CHUNK_SIZE} bytes padded)`
-        // incrementalHashes.value = chunkHashes
-
-        const hashes = incrementalHashes.value.slice()
-        hashes[i] = hasher.finish().toHex()
-        incrementalHashes.value = hashes
-    }, [])
-
     // Build the trusted root digest from the verification inputs
     const buildTrustedRoot = useCallback(() => {
         try {
@@ -128,7 +83,9 @@ const Example:FunctionComponent = function () {
             const metadata = buildVerificationMetadata(fullData, CHUNK_SIZE)
 
             // Store metadata and trusted root
-            verificationMetadata.value = metadata.chunks
+            verificationMetadata.value = metadata.chunks.map(chunk => {
+                return buildVerificationMetadata.lighten(chunk)
+            })
             trustedRoot.value = metadata.rootDigest.toHex()
 
             // Reset verification results
@@ -141,8 +98,10 @@ const Example:FunctionComponent = function () {
         }
     }, [])
 
-    // Verify a single chunk
-    const verifyChunkAtIndex = useCallback((ev: MouseEvent) => {
+    /**
+     * Verify a single chunk.
+     */
+    const verifyChunkAtIndex = useCallback((ev:MouseEvent) => {
         ev.preventDefault()
         const { index } = (ev.target as HTMLButtonElement).dataset
         const chunkIndex = parseInt(index!)
@@ -165,13 +124,11 @@ const Example:FunctionComponent = function () {
             // Verify the chunk
             const trustedDigest = BabDigest.fromHex(trustedRoot.value)
             const isValid = verifyChunk(
-                chunkData,
-                verifyInputs.value.length,
-                metadata.siblingLabels,
-                metadata.siblingDirections,
-                trustedDigest,
-                CHUNK_SIZE,
-                metadata.mergeLengths
+                chunkData,  // the data to check
+                metadata,  // chunk metadata
+                verifyInputs.value.length,  // number of chunks
+                trustedDigest,  // hash of everything (root hash)
+                CHUNK_SIZE,  // chunk size -- 8 bytes for us
             )
 
             // Update results
@@ -236,153 +193,25 @@ const Example:FunctionComponent = function () {
                 `}
             </div>
 
-            <div class="method">
-                <h2>Incremental Hashing (Chunk-by-Chunk)</h2>
-                <p class="description">
-                    Hash data in fixed-size chunks. Each input below is padded to
-                    exactly <strong>${CHUNK_SIZE} bytes</strong> to form one chunk.
-                </p>
-
-                <p>
-                    This demo shows how bab divides data into fixed-size chunks.
-                    Each text input is padded (with null bytes) to ${CHUNK_SIZE} bytes,
-                    making it exactly one chunk.
-                </p>
-
-                <p>
-                    In the example here, we call
-                    ${NBSP}<code>BabHasher.write</code> on each padded chunk,
-                    then call <code>hasher.finish()</code>, which returns
-                    the final hash by combining all chunks via a Merkle tree.
-                </p>
-
-                <p>
-                    This lets us do incremental verification, meaning we can
-                    verify chunks as they arrive without waiting for the complete file.
-                </p>
-
-                <div class="incremental-section">
-                    <div class="input-label">
-                        <label for="increment-0-hash">Chunk 1:</label>
-                        <input
-                            type="text"
-                            id="increment-0-hash"
-                            name="increment-0-hash"
-                            value=${incrementals.value[0]}
-                            onInput=${(e:any) => {
-                                incrementals.value = [
-                                    e.target.value,
-                                    ...incrementals.value.slice(1)
-                                ]
-                            }}
-                            placeholder="First chunk"
-                            class="input"
-                            maxlength="${CHUNK_SIZE}"
-                        />
-                        <span class="byte-count">
-                            (${incrementals.value[0].length}/${CHUNK_SIZE} bytes)
-                        </span>
-                    </div>
-
-                    <button
-                        data-increment="${0}"
-                        onClick=${hashIncrement}
-                    >
-                        Hash Chunk 1
-                    </button>
-
-                    <div class="chunk-status">
-                        ${incrementalHashes.value[0] || '-'}
-                    </div>
-                </div>
-
-                <div class="incremental-section">
-                    <div class="input-label">
-                        <label for="increment-1-hash">Chunk 2:</label>
-                        <input
-                            type="text"
-                            name="increment-1-hash"
-                            id="increment-1-hash"
-                            value=${!incrementals.value[1].trim() ? '(whitespace)' : incrementals.value[1]}
-                            onInput=${(e:any) => {
-                                incrementals.value = [
-                                    incrementals.value[0],
-                                    e.target.value,
-                                    incrementals.value[2]
-                                ]
-                            }}
-                            placeholder="Second chunk"
-                            class="input ${!incrementals.value[1].trim() ? ' whitespace' : ''}"
-                            maxlength="${CHUNK_SIZE}"
-                        />
-                        <span class="byte-count">
-                            (${incrementals.value[1].length}/${CHUNK_SIZE} bytes)
-                        </span>
-                    </div>
-
-                    <button
-                        data-increment="${1}"
-                        onClick=${hashIncrement}
-                    >
-                        Hash Chunk 2
-                    </button>
-
-                    <div class="chunk-status">
-                        ${incrementalHashes.value[1] || '-'}
-                    </div>
-                </div>
-
-                <div class="incremental-section">
-                    <div class="input-label">
-                        <label for="increment-2-hash">Chunk 3:</label>
-                        <input
-                            type="text"
-                            id="increment-2-hash"
-                            name="increment-2-hash"
-                            value=${incrementals.value[2]}
-                            onInput=${(e:any) => {
-                                incrementals.value = [
-                                    incrementals.value[0],
-                                    incrementals.value[1],
-                                    e.target.value
-                                ]
-                            }}
-                            placeholder="Third chunk"
-                            class="input"
-                            maxlength="${CHUNK_SIZE}"
-                        />
-                        <span class="byte-count">(${incrementals.value[2].length}/${CHUNK_SIZE} bytes)</span>
-                    </div>
-
-                    <button
-                        data-increment="${2}"
-                        onClick=${hashIncrement}
-                    >
-                        Hash Chunk 3
-                    </button>
-
-                    <div class="chunk-status">
-                        ${incrementalHashes.value[2] || '-'}
-                    </div>
-                </div>
-
-                <button onClick=${hashIncremental} class="button">
-                    Hash All Chunks (Get Final Digest)
-                </button>
-
-                ${incrementalOutput && html`
-                    <div class="output">
-                        <strong>Digest:</strong>
-                        <code class="digest">${incrementalOutput}</code>
-                    </div>
-                `}
-            </div>
-
             <div class="method verification">
                 <h2>Incremental Verification</h2>
                 <p class="description">
                     Verify chunks as they arrive, without waiting for the
-                    complete file.
+                    complete file. Before verifying the chunks, we need
+                    to call${NBSP}
+                </p>
+
+                <pre>
+                    <code>
+                        buildVerificationMetadata(fullData, CHUNK_SIZE)
+                    </code>
+                </pre>
+
+                <p>
+                    on the complete buffer. The function${NBSP}
+                    <code>buildVerificationMetadata</code> is exposed in the
+                    file <code>./src/verify.ts</code>. This metadata should
+                    be created before transferring the data.
                 </p>
 
                 <div class="verification-explainer">
@@ -443,6 +272,19 @@ const Example:FunctionComponent = function () {
                         <div class="output trusted-root">
                             <strong>Trusted Root Digest:</strong>
                             <code class="digest">${trustedRoot.value}</code>
+
+                            <strong>Chunk metadata:</strong>
+                            <p>
+                                One metadata for each chunk.
+                            </p>
+                            <pre>
+                                ${JSON.stringify(
+                                    verificationMetadata,
+                                    customStringifier,
+                                    2
+                                )}
+                            </pre>
+
                             <p class="note">
                                 In practice, you'd receive this from a trusted
                                 source. Now you can verify chunks as
@@ -455,7 +297,10 @@ const Example:FunctionComponent = function () {
                 ${trustedRoot.value && html`
                     <div class="step">
                         <h3>Step 2: Verify Chunks as They Arrive</h3>
-                        <p>Simulate chunks arriving one at a time. Try changing a chunk to see verification fail!</p>
+                        <p>
+                            Simulate chunks arriving one at a time. Try
+                            changing a chunk to see verification fail.
+                        </p>
 
                         ${[0, 1, 2].map(i => html`
                             <div class="verify-chunk-section">
@@ -467,7 +312,6 @@ const Example:FunctionComponent = function () {
                                             verifyInputs.value[i] :
                                             '(white space)'}
                                         onInput=${(e:any) => {
-                                            debug('event')
                                             const newInputs = [...verifyInputs.value]
                                             newInputs[i] = e.target.value
                                             debug('new input value', newInputs[i])
@@ -527,4 +371,14 @@ function padToChunkSize (str:string):Uint8Array {
     padded.set(data.slice(0, CHUNK_SIZE))
 
     return padded
+}
+
+function customStringifier (_key, value) {
+    if (value instanceof Uint8Array ||
+      (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) ||
+      (typeof DataView !== 'undefined' && value instanceof DataView)
+    ) {
+        return 'buffer: ' + value.byteLength + ' bytes'
+    }
+    return value  // Return the original value for other types
 }

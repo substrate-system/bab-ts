@@ -14,6 +14,11 @@ body {
     margin-bottom: 8rem;
 }
 
+pre {
+    padding: 1rem;
+    background-color: #00000008;
+}
+
 main {
     max-width: 35rem;
     margin: 0 auto;

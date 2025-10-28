@@ -75,3 +75,8 @@ cp ./node_modules/@substrate-system/bab-ts/dist/module.min.js ./public
 ```html
 <script type="module" src="./module.min.js"></script>
 ```
+
+## Example
+
+```ts
+```
