@@ -5,7 +5,7 @@
 [![semantic versioning](https://img.shields.io/badge/semver-2.0.0-blue?logo=semver&style=flat-square)](https://semver.org/)
 [![Common Changelog](https://nichoth.github.io/badge/common-changelog.svg)](./CHANGELOG.md)
 [![install size](https://flat.badgen.net/packagephobia/install/@substrate-system/bab-ts)](https://packagephobia.com/result?p=@substrate-system/bab-ts)
-[![gzip size](https://img.shields.io/bundlephobia/minzip/@substrate-system/package?style=flat-square)](https://bundlephobia.com/@substrate-system/name/package/route-event)
+[![gzip size](https://img.shields.io/bundlephobia/minzip/@substrate-system/bab-ts?style=flat-square)](https://bundlephobia.com/@substrate-system/name/package/bab-ts)
 [![dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg?style=flat-square)](package.json)
 [![license](https://img.shields.io/badge/license-Big_Time-blue?style=flat-square)](LICENSE)
 
