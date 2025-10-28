@@ -14,7 +14,7 @@
 
 Bab is a cryptographic hash function suitable for peer-to-peer systems.
 It lets you incrementally verify parts of the download,
-as them stream in.
+as they stream in.
 
 [I made a kind of elaborate demo page for this](https://substrate-system.github.io/bab-ts/).
 
