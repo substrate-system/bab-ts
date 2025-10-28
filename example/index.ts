@@ -166,7 +166,6 @@ const Example:FunctionComponent = function () {
             const trustedDigest = BabDigest.fromHex(trustedRoot.value)
             const isValid = verifyChunk(
                 chunkData,
-                chunkIndex,
                 verifyInputs.value.length,
                 metadata.siblingLabels,
                 metadata.siblingDirections,

@@ -2,7 +2,12 @@
 // Implements a streaming hasher that can process data in chunks
 
 import { BabDigest } from './digest.js'
-import { hashChunk, hashInner, CHUNK_SIZE, createContexts, createKeyedContexts } from './william3.js'
+import {
+    hashChunk,
+    hashInner,
+    createContexts,
+    createKeyedContexts
+} from './william3.js'
 
 // Tree node for storing frontier structure
 interface TreeNode {

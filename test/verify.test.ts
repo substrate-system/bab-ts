@@ -25,7 +25,6 @@ test('verifyChunk validates correct chunks', (t) => {
         const chunk = metadata.chunks[i]
         const isValid = verifyChunk(
             chunk.chunkData,
-            chunk.chunkIndex,
             metadata.chunks.length,
             chunk.siblingLabels,
             chunk.siblingDirections,
@@ -49,7 +48,6 @@ test('verifyChunk rejects tampered chunks', (t) => {
 
         const isValid = verifyChunk(
             tamperedData,
-            chunk.chunkIndex,
             metadata.chunks.length,
             chunk.siblingLabels,
             chunk.siblingDirections,
@@ -73,7 +71,6 @@ test('verification works with different chunk sizes', (t) => {
             const chunk = metadata.chunks[i]
             const isValid = verifyChunk(
                 chunk.chunkData,
-                chunk.chunkIndex,
                 metadata.chunks.length,
                 chunk.siblingLabels,
                 chunk.siblingDirections,
@@ -96,7 +93,6 @@ test('single chunk verification', (t) => {
     const chunk = metadata.chunks[0]
     const isValid = verifyChunk(
         chunk.chunkData,
-        0,
         1,
         chunk.siblingLabels,
         chunk.siblingDirections,

@@ -1,6 +1,5 @@
 // Batch hashing API for Bab
 // This is the simplest API - requires the full string to be available at once
-
 import { BabDigest } from './digest.js'
 import {
     hashChunk,
@@ -9,7 +8,7 @@ import {
     createKeyedContexts
 } from './william3.js'
 
-// The simplest hashing API; it requires the full string to be available
+// The simplest hashing API; requires the full string to be available
 // at once
 export function batchHash (data:Uint8Array, chunkSize?:number):BabDigest {
     const { chunkContext, innerContext } = createContexts(chunkSize)

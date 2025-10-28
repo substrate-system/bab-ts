@@ -5,9 +5,23 @@
 export { BabDigest } from './digest.js'
 export { BabHasher } from './hasher.js'
 export { batchHash, batchHashKeyed } from './batch.js'
-export { hashChunk, hashInner, WIDTH, CHUNK_SIZE, createContexts, createKeyedContexts } from './william3.js'
+export {
+    hashChunk,
+    hashInner,
+    WIDTH,
+    CHUNK_SIZE,
+    createContexts,
+    createKeyedContexts
+} from './william3.js'
 export { buildVerificationMetadata, verifyChunk } from './verify.js'
 export type { ChunkVerificationData } from './verify.js'
 
-// Re-export compression primitives for advanced use
-export { hash1, CHUNK_START, CHUNK_END, PARENT, ROOT, KEYED_HASH } from './portable.js'
+// Re-export compression primitives
+export {
+    hash1,
+    CHUNK_START,
+    CHUNK_END,
+    PARENT,
+    ROOT,
+    KEYED_HASH
+} from './portable.js'

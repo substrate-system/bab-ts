@@ -5,13 +5,13 @@
 const BLOCK_LEN = 64
 
 // Initialization vector (derived from hashing "WILLIAM3" instead of "BLAKE3")
-const IV: number[] = [
+const IV:number[] = [
     0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5,
     0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b
 ]
 
 // Message schedule
-const MSG_SCHEDULE: number[][] = [
+const MSG_SCHEDULE:number[][] = [
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8],
     [3, 4, 10, 12, 13, 2, 7, 14, 6, 5, 9, 0, 11, 15, 8, 1],
@@ -29,17 +29,25 @@ export const ROOT = 1 << 3
 export const KEYED_HASH = 1 << 4
 
 // Rotate right
-function rotr32 (x: number, n: number): number {
+function rotr32 (x:number, n:number):number {
     return (x >>> n) | (x << (32 - n))
 }
 
 // Add two 32-bit integers (with overflow wrapping)
-function wrappingAdd (a: number, b: number): number {
+function wrappingAdd (a:number, b:number):number {
     return (a + b) >>> 0
 }
 
 // The g mixing function
-function g (state: number[], a: number, b: number, c: number, d: number, mx: number, my: number): void {
+function g (
+    state:number[],
+    a:number,
+    b:number,
+    c:number,
+    d:number,
+    mx:number,
+    my:number
+):void {
     state[a] = wrappingAdd(wrappingAdd(state[a], state[b]), mx)
     state[d] = rotr32(state[d] ^ state[a], 16)
     state[c] = wrappingAdd(state[c], state[d])
@@ -51,7 +59,7 @@ function g (state: number[], a: number, b: number, c: number, d: number, mx: num
 }
 
 // One round of compression
-function round (state: number[], msg: number[], schedule: number[]): void {
+function round (state:number[], msg:number[], schedule:number[]):void {
     // Column mixing
     g(state, 0, 4, 8, 12, msg[schedule[0]], msg[schedule[1]])
     g(state, 1, 5, 9, 13, msg[schedule[2]], msg[schedule[3]])
@@ -67,12 +75,12 @@ function round (state: number[], msg: number[], schedule: number[]): void {
 
 // Prepare initial state and run 7 rounds
 function compressPre (
-    chainingValue: number[],
-    blockWords: number[],
-    counter: bigint,
-    blockLen: number,
-    flags: number
-): number[] {
+    chainingValue:number[],
+    blockWords:number[],
+    counter:bigint,
+    blockLen:number,
+    flags:number
+):number[] {
     const state = [
         chainingValue[0], chainingValue[1], chainingValue[2], chainingValue[3],
         chainingValue[4], chainingValue[5], chainingValue[6], chainingValue[7],
@@ -89,12 +97,12 @@ function compressPre (
 
 // Finalize compression by XORing state halves
 function compressInPlace (
-    chainingValue: number[],
-    blockWords: number[],
-    counter: bigint,
-    blockLen: number,
-    flags: number
-): void {
+    chainingValue:number[],
+    blockWords:number[],
+    counter:bigint,
+    blockLen:number,
+    flags:number
+):void {
     const state = compressPre(chainingValue, blockWords, counter, blockLen, flags)
 
     for (let i = 0; i < 8; i++) {
@@ -103,8 +111,8 @@ function compressInPlace (
 }
 
 // Convert 64 bytes to 16 u32 words (little-endian)
-function wordsFromLeBytes64 (bytes: Uint8Array): number[] {
-    const words: number[] = []
+function wordsFromLeBytes64 (bytes:Uint8Array):number[] {
+    const words:number[] = []
     for (let i = 0; i < 16; i++) {
         words.push(
             bytes[i * 4] |
@@ -117,7 +125,7 @@ function wordsFromLeBytes64 (bytes: Uint8Array): number[] {
 }
 
 // Convert 8 u32 words to 32 bytes (little-endian)
-function leBytesFromWords32 (words: number[]): Uint8Array {
+function leBytesFromWords32 (words:number[]):Uint8Array {
     const bytes = new Uint8Array(32)
     for (let i = 0; i < 8; i++) {
         bytes[i * 4] = words[i] & 0xFF
@@ -130,11 +138,11 @@ function leBytesFromWords32 (words: number[]): Uint8Array {
 
 // Main hash1 function - processes input data with block padding for the final block
 export function hash1 (
-    chainingValue: number[],
-    data: Uint8Array,
-    counter: bigint,
-    flags: number
-): Uint8Array {
+    chainingValue:number[],
+    data:Uint8Array,
+    counter:bigint,
+    flags:number
+):Uint8Array {
     const cv = [...chainingValue]
     let offset = 0
 
