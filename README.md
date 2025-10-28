@@ -21,7 +21,19 @@ A TypeScript implementation of the Bab hash function family, specifically the WI
 [See a live demo](https://substrate-system.github.io/bab-ts/)
 
 <details><summary><h2>Contents</h2></summary>
+
 <!-- toc -->
+
+- [install](#install)
+- [API](#api)
+  * [ESM](#esm)
+  * [Common JS](#common-js)
+- [use](#use)
+  * [JS](#js)
+  * [pre-built JS](#pre-built-js)
+
+<!-- tocstop -->
+
 </details>
 
 ## install
