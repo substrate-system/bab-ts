@@ -302,6 +302,12 @@ const Example:FunctionComponent = function () {
                             changing a chunk to see verification fail.
                         </p>
 
+                        <p>
+                            Here we call <code>verifyChunk</code> with the
+                            chunk data, the metadata for that chunk,
+                            the root hash, and the total number of chunks.
+                        </p>
+
                         ${[0, 1, 2].map(i => html`
                             <div class="verify-chunk-section">
                                 <div>

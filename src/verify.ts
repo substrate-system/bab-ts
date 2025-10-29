@@ -197,6 +197,7 @@ export function buildVerificationMetadata (
 export type ChunkMetadataLight = {
     siblingLabels:Uint8Array[];
     siblingDirections:number[];
+    mergeLengths:number[];
 }
 
 buildVerificationMetadata.lighten = function (
@@ -205,6 +206,7 @@ buildVerificationMetadata.lighten = function (
     return {
         siblingLabels: chunkMetadata.siblingLabels,
         siblingDirections: chunkMetadata.siblingDirections,
+        mergeLengths: chunkMetadata.mergeLengths,
     }
 }
 
@@ -215,7 +217,6 @@ export function verifyChunk (
     totalChunks:number,
     trustedRootHash:BabDigest,
     chunkSize?:number,
-    mergeLengths?:number[],
 ):boolean {
     const { chunkContext, innerContext } = createContexts(chunkSize)
 
@@ -234,9 +235,7 @@ export function verifyChunk (
         const isOnLeft = metadata.siblingDirections[i] === 0
 
         // Get the combined length for this merge point
-        const combinedLength = (mergeLengths ?
-            BigInt(mergeLengths[i]) :
-            BigInt(0))
+        const combinedLength = BigInt(metadata.mergeLengths[i])
 
         let leftLabel:Uint8Array
         let rightLabel:Uint8Array
