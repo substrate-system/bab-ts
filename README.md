@@ -21,11 +21,17 @@ of the download, as they stream in.
 
 <!-- toc -->
 
-- [install](#install)
-- [API](#api)
+- [Install](#install)
+- [Example](#example)
+  * [A few definitions](#a-few-definitions)
+  * [File Provider Perspective](#file-provider-perspective)
+  * [File Downloader Perspective](#file-downloader-perspective)
+  * [What is `ChunkMetadataLight`?](#what-is-chunkmetadatalight)
+  * [Metadata Flow](#metadata-flow)
+  * [Chunk Size Considerations](#chunk-size-considerations)
+- [Use](#use)
   * [ESM](#esm)
   * [Common JS](#common-js)
-- [use](#use)
   * [JS](#js)
   * [pre-built JS](#pre-built-js)
 
