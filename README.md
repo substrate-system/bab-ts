@@ -26,7 +26,6 @@ of the download, as they stream in.
   * [A few definitions](#a-few-definitions)
   * [File Provider Perspective](#file-provider-perspective)
   * [File Downloader Perspective](#file-downloader-perspective)
-  * [What is `ChunkMetadataLight`?](#what-is-chunkmetadatalight)
   * [Metadata Flow](#metadata-flow)
   * [Chunk Size Considerations](#chunk-size-considerations)
 - [Use](#use)
@@ -61,9 +60,9 @@ __Root Digest__
 
 A cryptographic hash of the entire file, shared upfront via a trusted channel.
 
-__Chunk Metadata (Light)__
+__Chunk Metadata__
 
-Small verification data sent with each chunk during streaming
+Verification data for each chunk, including sibling labels from the Merkle tree path
 
 
 ### File Provider Perspective
@@ -79,7 +78,7 @@ The provider has data to share. It should:
 import {
     buildVerificationMetadata,
     BabDigest,
-    type ChunkMetadataLight
+    type ChunkVerificationData
 } from '@substrate-system/bab-ts'
 
 // The file provider has some data to share
@@ -96,24 +95,15 @@ const { rootDigest, chunks } = buildVerificationMetadata(fileData)
 
 console.log('Root digest (share this):', rootDigest.toHex())
 
-// Prepare to stream chunks with their metadata
-// The light version excludes the chunk data and chunk label,
-// because they're not needed for verification
-const chunksToStream = chunks.map(chunk => ({
-    chunkIndex: chunk.chunkIndex,
-    data: chunk.chunkData,
-    // Use the lighten method to extract only verification metadata
-    metadata: buildVerificationMetadata.lighten(chunk)
-}))
-
-// Stream each chunk with metadata
-for (const { chunkIndex, chunkData, metadata } of chunksToStream) {
+// Stream each chunk with its metadata
+for (const chunk of chunks) {
     // IRL, you would send this over the network
-    // The metadata is sent WITH each chunk
+    // The chunk includes both data and verification metadata
     sendToDownloader({
-        index: chunkIndex,
-        data: chunkData,
-        metadata: metadata  // siblingLabels, directions, lengths
+        index: chunk.chunkIndex,
+        data: chunk.chunkData,
+        // Metadata includes siblingLabels, siblingDirections, and mergeLengths
+        metadata: chunk
     })
 }
 ```
@@ -128,7 +118,7 @@ The downloader receives:
 import {
   verifyChunk,
   BabDigest,
-  type ChunkMetadataLight
+  type ChunkVerificationData
 } from '@substrate-system/bab-ts'
 
 // Downloader receives the root digest via a trusted channel
@@ -143,7 +133,7 @@ const totalChunks = 5  // Communicated by provider
 // As each chunk arrives with its metadata, verify it immediately
 function onChunkReceived(
     chunkData:Uint8Array,
-    metadata:ChunkMetadataLight,
+    metadata:ChunkVerificationData,
     chunkIndex:number
 ) {
     // Verify this chunk with the trusted root digest
@@ -167,45 +157,21 @@ function onChunkReceived(
 // Simulate receiving chunks
 onChunkReceived(
     receivedChunkData,     // Uint8Array
-    receivedMetadata,      // ChunkMetadataLight
+    receivedMetadata,      // ChunkVerificationData
     0                      // chunk index
 )
 ```
-
-### What is `ChunkMetadataLight`?
-
-The light metadata contains only what's needed to verify a chunk. Call
-`buildVerificationMetadata.lighten` on any chunk to get the light metadata.
-
-
-```ts
-interface ChunkMetadataLight {
-    // Sibling hashes along the Merkle tree path
-    siblingLabels:Uint8Array[]
-
-    // Which side each sibling is on (0 = left, 1 = right)
-    siblingDirections:number[]
-
-    // Combined data lengths at each merge point
-    mergeLengths:number[]
-}
-```
-
-This metadata is small (typically a few hundred bytes) and allows the
-downloader to reconstruct the Merkle tree path from the chunk to the root,
-verifying the chunk's authenticity.
-
 
 ### Metadata Flow
 
 1. **Provider**: Builds all metadata upfront using `buildVerificationMetadata()`
 2. **Provider**: Shares root digest upfront via trusted channel
 3. **Provider**: For each chunk during streaming, sends:
-   - The chunk data
-   - The light metadata for that specific chunk
+   - The chunk data (`chunkData`)
+   - The verification metadata (`siblingLabels`, `siblingDirections`, `mergeLengths`)
 4. **Downloader**: Receives root digest first (trusted)
 5. **Downloader**: For each chunk received, immediately verifies it using the
-   chunk data + metadata + trusted root digest
+   chunk data + verification metadata + trusted root digest
 
 ### Chunk Size Considerations
 
@@ -278,3 +244,71 @@ cp ./node_modules/@substrate-system/bab-ts/dist/module.min.js ./public
 ```html
 <script type="module" src="./module.min.js"></script>
 ```
+
+-------
+
+
+## Test
+
+### Compare
+
+```sh
+npm run compare
+```
+
+Create output from the rust version, and compare it to the output from
+this module. This command runs the file
+[run-comparison.ts](./test-comparison/run-comparison.ts),
+which calls the [Rust version of bab](https://codeberg.org/worm-blossom/bab_rs).
+
+#### Rust Dependency
+
+That means that this module depend on the Rust module for the tests. That's what
+[./test-comparison/rust/Cargo.toml](./test-comparison/rust/Cargo.toml) is for.
+
+You need Rust to do this.
+
+##### Install Rust
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+That's it. Then you can run the `npm run compare` test.
+
+
+When you call `npm run compare`, it executes:
+
+```sh
+cargo run --release --bin bab-comparison
+```
+
+Then Cargo (Rust's package manager):
+
+1. Downloads `bab_rs` from https://codeberg.org/worm-blossom/bab_rs.git
+2. Compiles it
+3. Runs the comparison binary
+
+
+
+
+### The `compare` script
+
+1. Run TypeScript implementation (lines 63-99 in
+   [run-comparison.ts](./test-comparison/run-comparison.ts#L63)):
+    - Execute `batchHash()` and `buildVerificationMetadata()` from this
+      module on test cases
+    - Write results to `test-comparison/ts-output.json`
+2. Run Rust implementation (lines 102-111):
+    - Execute `cargo run --release --bin bab-comparison`
+    - This compiles and runs the Rust binary which generates output using
+      the `bab_rs` library
+    - Write results to `test-comparison/rust-output.json`
+3. Compare outputs (lines 122-161):
+    - Load both JSON files
+    - Run 17 tests comparing:
+        * Batch hashes for "hello world", empty string, single chunk, and
+          multiple chunks
+        * Input byte lengths
+        * Number of chunks
+    - Use `tapzero` to report results

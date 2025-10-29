@@ -38,22 +38,16 @@ function doBatchHash (
     }
 
     // Recursive case: split into two parts
-    // Find the split point: the largest power of 2 chunks that is less than
-    // the total number of chunks
-    // This ensures all left subtrees are complete trees
-    const numChunks = Math.ceil(data.length / chunkSize)
-
-    // Find the largest power of 2 that is less than numChunks
-    // This is: 1 << floor(log2(numChunks - 1)) for numChunks > 1
-    // Or equivalently: the highest bit in (numChunks - 1)
-    const splitChunks = numChunks === 1 ?
-        1 :
-        (1 << Math.floor(Math.log2(numChunks - 1)))
-    const splitPoint = splitChunks * chunkSize
+    // Split at the greatest power of 2 strictly less than data.length
+    // Unless data.length is a power of 2, then use data.length / 2
+    const isPowerOfTwo = (data.length & (data.length - 1)) === 0
+    const splitPoint = isPowerOfTwo ?
+        data.length / 2 :
+        (1 << Math.floor(Math.log2(data.length)))
 
     // Recursively hash left and right parts
-    const leftData = data.slice(0, Math.min(splitPoint, data.length))
-    const rightData = data.slice(Math.min(splitPoint, data.length))
+    const leftData = data.slice(0, splitPoint)
+    const rightData = data.slice(splitPoint)
 
     const leftLabel = doBatchHash(leftData, false, chunkContext, innerContext)
     const rightLabel = doBatchHash(rightData, false, chunkContext, innerContext)

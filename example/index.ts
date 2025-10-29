@@ -8,9 +8,9 @@ import {
     batchHash,
     buildVerificationMetadata,
     verifyChunk,
-    BabDigest
+    BabDigest,
+    type ChunkVerificationData
 } from '../src/index.js'
-import { type ChunkMetadataLight } from '../src/verify.js'
 const debug = Debug(import.meta.env.DEV)
 
 const NBSP = '\u00A0'
@@ -27,7 +27,7 @@ const Example:FunctionComponent = function () {
     // Verification state
     const verifyInputs = useSignal<string[]>(['hello', ' ', 'world'])
     const trustedRoot = useSignal<string>('')
-    const verificationMetadata = useSignal<ChunkMetadataLight[]>([])
+    const verificationMetadata = useSignal<ChunkVerificationData[]>([])
     const verificationResults = useSignal<Array<boolean|null>>([null, null, null])
     const verificationResultClasses = useComputed<(string)[]>(() => {
         return verificationResults.value.map(r => {
@@ -83,9 +83,7 @@ const Example:FunctionComponent = function () {
             const metadata = buildVerificationMetadata(fullData, CHUNK_SIZE)
 
             // Store metadata and trusted root
-            verificationMetadata.value = metadata.chunks.map(chunk => {
-                return buildVerificationMetadata.lighten(chunk)
-            })
+            verificationMetadata.value = metadata.chunks
             trustedRoot.value = metadata.rootDigest.toHex()
 
             // Reset verification results
@@ -303,12 +301,6 @@ const Example:FunctionComponent = function () {
                             changing a chunk to see verification fail.
                         </p>
 
-                        <p>
-                            Here we call <code>verifyChunk</code> with the
-                            chunk data, the metadata for that chunk,
-                            the root hash, and the total number of chunks.
-                        </p>
-
                         ${[0, 1, 2].map(i => html`
                             <div class="verify-chunk-section">
                                 <div>
@@ -380,7 +372,7 @@ function padToChunkSize (str:string):Uint8Array {
     return padded
 }
 
-function customStringifier (_key, value) {
+function customStringifier (_key:string, value:any) {
     if (value instanceof Uint8Array ||
       (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) ||
       (typeof DataView !== 'undefined' && value instanceof DataView)

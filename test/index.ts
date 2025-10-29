@@ -4,6 +4,9 @@ import { BabHasher, batchHash, BabDigest, CHUNK_SIZE } from '../src/index.js'
 // Import verification tests
 import './verify.test.js'
 
+// Import test vectors test
+import './test-vectors.test.js'
+
 test('basic batch hashing', async t => {
     const data = new Uint8Array([1, 2, 3, 4, 5])
     const digest = batchHash(data)

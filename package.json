@@ -36,6 +36,7 @@
     "build-example": "mkdir -p ./public && rm -rf ./public/* && VITE_DEBUG_MODE=staging vite --mode staging --base=\"/bab-ts\" build",
     "build-docs": "typedoc ./src/index.ts",
     "build": "mkdir -p ./dist && rm -rf ./dist/* && npm run build-cjs && npm run build-esm && npm run build-esm:min && npm run build-cjs:min",
+    "compare": "esbuild ./test-comparison/run-comparison.ts --bundle --platform=node --external:node:child_process --external:node:fs --external:node:path | node",
     "start": "vite",
     "toc": "markdown-toc --maxdepth 3 -i README.md",
     "preversion": "npm run lint",
@@ -43,13 +44,13 @@
     "postversion": "git push --follow-tags && npm publish",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {},
   "devDependencies": {
     "@preact/preset-vite": "^2.10.2",
     "@preact/signals": "^2.3.2",
     "@substrate-system/debug": "^0.9.24",
     "@substrate-system/tapout": "^0.0.24",
     "@substrate-system/tapzero": "^0.10.15",
+    "@types/node": "^24.9.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "auto-changelog": "^2.4.0",

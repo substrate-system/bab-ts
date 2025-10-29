@@ -194,26 +194,10 @@ export function buildVerificationMetadata (
     }
 }
 
-export type ChunkMetadataLight = {
-    siblingLabels:Uint8Array[];
-    siblingDirections:number[];
-    mergeLengths:number[];
-}
-
-buildVerificationMetadata.lighten = function (
-    chunkMetadata:ChunkVerificationData
-):ChunkMetadataLight {
-    return {
-        siblingLabels: chunkMetadata.siblingLabels,
-        siblingDirections: chunkMetadata.siblingDirections,
-        mergeLengths: chunkMetadata.mergeLengths,
-    }
-}
-
 // Verify a chunk against a trusted root digest
 export function verifyChunk (
     chunkData:Uint8Array,
-    metadata:ChunkMetadataLight,
+    metadata:ChunkVerificationData,
     totalChunks:number,
     trustedRootHash:BabDigest,
     chunkSize?:number,

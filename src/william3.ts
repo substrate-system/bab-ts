@@ -4,7 +4,9 @@ import {
     CHUNK_END,
     PARENT,
     ROOT,
-    KEYED_HASH
+    KEYED_HASH,
+    IV,
+    BLOCK_LEN
 } from './portable.js'
 
 export const WIDTH = 32 // Output digest size in bytes
@@ -16,10 +18,7 @@ class HashChunkContext {
     private chunkSize:number
 
     constructor (key?:number[], chunkSize?:number) {
-        this.key = key || [
-            0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5,
-            0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b
-        ]
+        this.key = key || IV
         this.chunkSize = chunkSize ?? CHUNK_SIZE
     }
 
@@ -33,8 +32,8 @@ class HashChunkContext {
 
     isKeyed ():boolean {
         return this.key.length > 8 || this.key.some((v, i) => v !== [
-            0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5,
-            0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b
+            0xc88f633b, 0x4168fbf2, 0x6ba32583, 0xb0ff1847,
+            0xac57e47d, 0xa8931330, 0x796a4645, 0x6b28a3ee
         ][i])
     }
 }
@@ -44,10 +43,7 @@ class HashInnerContext {
     private key:number[]
 
     constructor (key?:number[]) {
-        this.key = key || [
-            0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5,
-            0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b
-        ]
+        this.key = key || IV
     }
 
     getKey ():number[] {
@@ -55,10 +51,7 @@ class HashInnerContext {
     }
 
     isKeyed ():boolean {
-        return this.key.length > 8 || this.key.some((v, i) => v !== [
-            0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5,
-            0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b
-        ][i])
+        return this.key.length > 8 || this.key.some((v, i) => v !== IV[i])
     }
 }
 
@@ -68,7 +61,7 @@ export function hashChunk (
     isRoot:boolean,
     chunkContext:HashChunkContext
 ): Uint8Array {
-    let flags = CHUNK_START | CHUNK_END
+    let flags = 0
     if (isRoot) {
         flags |= ROOT
     }
@@ -76,17 +69,17 @@ export function hashChunk (
         flags |= KEYED_HASH
     }
 
-    return hash1(chunkContext.getKey(), data, 0n, flags)
+    return hash1(chunkContext.getKey(), data, 0n, flags, CHUNK_START, CHUNK_END)
 }
 
-// Encode a u64 as little-endian bytes
-function u64ToLeBytes (value:bigint):Uint8Array {
-    const bytes = new Uint8Array(8)
-    for (let i = 0; i < 8; i++) {
-        bytes[i] = Number((value >> BigInt(i * 8)) & 0xFFn)
-    }
-    return bytes
-}
+// // Encode a u64 as little-endian bytes
+// function u64ToLeBytes (value:bigint):Uint8Array {
+//     const bytes = new Uint8Array(8)
+//     for (let i = 0; i < 8; i++) {
+//         bytes[i] = Number((value >> BigInt(i * 8)) & 0xFFn)
+//     }
+//     return bytes
+// }
 
 // Hash an inner node (combining two child nodes)
 export function hashInner (
@@ -96,14 +89,11 @@ export function hashInner (
     isRoot:boolean,
     innerContext:HashInnerContext
 ):Uint8Array {
-    // Prepare input: left_label || right_label || length_bytes
-    const lengthBytes = u64ToLeBytes(length)
-    const input = new Uint8Array(
-        leftLabel.length + rightLabel.length + lengthBytes.length
-    )
+    // Prepare input: left_label || right_label (64 bytes total)
+    // The length is passed as the counter parameter, NOT concatenated into input
+    const input = new Uint8Array(BLOCK_LEN)
     input.set(leftLabel, 0)
-    input.set(rightLabel, leftLabel.length)
-    input.set(lengthBytes, leftLabel.length + rightLabel.length)
+    input.set(rightLabel, WIDTH)
 
     let flags = PARENT
     if (isRoot) {
@@ -113,7 +103,7 @@ export function hashInner (
         flags |= KEYED_HASH
     }
 
-    return hash1(innerContext.getKey(), input, 0n, flags)
+    return hash1(innerContext.getKey(), input, length, flags, 0, 0)
 }
 
 // Create unkeyed contexts

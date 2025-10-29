@@ -2,12 +2,12 @@
 // Based on BLAKE3 but with modifications for Bab
 
 // Constants from BLAKE3
-const BLOCK_LEN = 64
+export const BLOCK_LEN = 64
 
-// Initialization vector (derived from hashing "WILLIAM3" instead of "BLAKE3")
-const IV:number[] = [
-    0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5,
-    0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b
+// Initialization vector (BLAKE3 digest of the ASCII string "WILLIAM3")
+export const IV:number[] = [
+    0xc88f633b, 0x4168fbf2, 0x6ba32583, 0xb0ff1847,
+    0xac57e47d, 0xa8931330, 0x796a4645, 0x6b28a3ee
 ]
 
 // Message schedule
@@ -141,29 +141,39 @@ export function hash1 (
     chainingValue:number[],
     data:Uint8Array,
     counter:bigint,
-    flags:number
+    flags:number,
+    flagsStart:number = 0,
+    flagsEnd:number = 0
 ):Uint8Array {
     const cv = [...chainingValue]
     let offset = 0
+    let blockFlags = flags | flagsStart
 
-    // Process complete blocks
-    while (offset + BLOCK_LEN <= data.length) {
-        const block = data.slice(offset, offset + BLOCK_LEN)
-        const blockWords = wordsFromLeBytes64(block)
-        compressInPlace(cv, blockWords, counter, BLOCK_LEN, flags)
-        offset += BLOCK_LEN
-    }
+    // Process blocks (if empty, skip and return unchanged CV)
+    while (offset < data.length) {
+        const remainingBytes = data.length - offset
+        const isLastBlock = remainingBytes <= BLOCK_LEN
 
-    // Process final (possibly incomplete) block with zero-padding
-    if (offset < data.length) {
-        const finalBlock = new Uint8Array(BLOCK_LEN)
-        finalBlock.set(data.slice(offset))
-        const blockWords = wordsFromLeBytes64(finalBlock)
-        compressInPlace(cv, blockWords, counter, data.length - offset, flags)
-    } else if (data.length === 0 || data.length % BLOCK_LEN === 0) {
-        // If data is empty or exactly divisible, we still need a final block
-        const blockWords = wordsFromLeBytes64(new Uint8Array(BLOCK_LEN))
-        compressInPlace(cv, blockWords, counter, 0, flags)
+        if (isLastBlock) {
+            blockFlags |= flagsEnd
+        }
+
+        if (remainingBytes < BLOCK_LEN) {
+            // Final incomplete block - pad with zeros
+            const finalBlock = new Uint8Array(BLOCK_LEN)
+            finalBlock.set(data.slice(offset))
+            const blockWords = wordsFromLeBytes64(finalBlock)
+            compressInPlace(cv, blockWords, counter, BLOCK_LEN, blockFlags)
+            break
+        } else {
+            // Complete block
+            const block = data.slice(offset, offset + BLOCK_LEN)
+            const blockWords = wordsFromLeBytes64(block)
+            compressInPlace(cv, blockWords, counter, BLOCK_LEN, blockFlags)
+            offset += BLOCK_LEN
+            // After first block, remove CHUNK_START flag
+            blockFlags = flags
+        }
     }
 
     return leBytesFromWords32(cv)

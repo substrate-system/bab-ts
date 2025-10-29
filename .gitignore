@@ -7,3 +7,11 @@ dist
 public
 docs
 .claude
+
+# Generated output files
+test-comparison/typescript-output.json
+test-comparison/rust-output.json
+
+# Rust build artifacts
+test-comparison/rust/target/
+test-comparison/rust/Cargo.lock
