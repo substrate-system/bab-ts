@@ -357,7 +357,7 @@ const Example:FunctionComponent = function () {
                                 <strong>Try it: </strong>
                                 Change "hello" to "hallo" in Chunk 1 and
                                 verify it.  It will fail immediately without
-                                downloading the rest!
+                                downloading the rest.
                             </p>
                         </div>
                     </div>
