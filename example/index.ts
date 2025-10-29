@@ -197,8 +197,8 @@ const Example:FunctionComponent = function () {
                 <h2>Incremental Verification</h2>
                 <p class="description">
                     Verify chunks as they arrive, without waiting for the
-                    complete file. Before verifying the chunks, we need
-                    to call${NBSP}
+                    complete file. Before verifying the chunks, the file
+                    provider needs to call${NBSP}
                 </p>
 
                 <pre>
@@ -224,7 +224,8 @@ const Example:FunctionComponent = function () {
                         </li>
                         <li>
                             <strong>Chunks arrive with proof: </strong>
-                            Each chunk comes with sibling labels from the
+                            Each chunk comes with sibling labels
+                            (<code>Uint8Arrays</code>) from the
                             Merkle tree
                         </li>
                         <li>
