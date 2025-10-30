@@ -30,7 +30,8 @@ const testCases = [
     },
     {
         name: 'multiple_chunks',
-        data: 'The quick brown fox jumps over the lazy dog. This is a longer text that will span multiple chunks.'.repeat(20),
+        data: 'The quick brown fox jumps over the lazy dog. ' +
+            'This is a longer text that will span multiple chunks.'.repeat(20),
         chunkSize: 1024
     }
 ]
@@ -114,10 +115,15 @@ function generateOutputs () {
     } catch (_err) {
         const err = _err as Error
         throw new Error('Failed to run Rust comparison: ' + err.message +
-            '\nMake sure Rust is installed: curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh')
+            '\nMake sure Rust is installed: curl --proto \'=https\' ' +
+                '--tlsv1.2 -sSf https://sh.rustup.rs | sh')
     }
 
-    const rustOutputPath = join(process.cwd(), 'test-comparison', 'rust-output.json')
+    const rustOutputPath = join(
+        process.cwd(),
+        'test-comparison',
+        'rust-output.json'
+    )
     const rustResults = JSON.parse(readFileSync(rustOutputPath, 'utf-8'))
 
     return { tsResults, rustResults }
@@ -163,6 +169,7 @@ test('TypeScript vs Rust: multiple chunks', (t) => {
     t.ok(ts, 'TypeScript output exists for "multiple_chunks" test')
     t.ok(rust, 'Rust output exists for "multiple_chunks" test')
     t.equal(ts?.input.bytes.length, 1960, 'input is 1960 bytes')
-    t.ok((ts?.verificationMetadata?.numChunks || 0) > 1, 'should have multiple chunks')
+    t.ok((ts?.verificationMetadata?.numChunks || 0) > 1,
+        'should have multiple chunks')
     t.equal(ts?.batchHash, rust?.batchHash, 'batch hashes should match')
 })

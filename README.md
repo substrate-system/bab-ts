@@ -266,8 +266,9 @@ which calls the [Rust version of bab](https://codeberg.org/worm-blossom/bab_rs).
 
 #### Rust Dependency
 
-That means that this module depend on the Rust module for the tests. That's what
-[./test-comparison/rust/Cargo.toml](./test-comparison/rust/Cargo.toml) is for.
+That means that this module depends on the Rust module for the tests. That's
+what [./test-comparison/rust/Cargo.toml](./test-comparison/rust/Cargo.toml)
+is for.
 
 You need Rust to do this.
 
@@ -296,6 +297,8 @@ Then Cargo (Rust's package manager):
 
 
 ### The `compare` script
+
+Execute these steps:
 
 1. Run TypeScript implementation (lines 63-99 in
    [run-comparison.ts](./test-comparison/run-comparison.ts#L63)):
