@@ -1,6 +1,6 @@
 {
   "name": "@substrate-system/bab-ts",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "type": "module",
   "description": "Bab + typescript",
   "author": "nichoth <nichoth@nichoth.com> (https://nichoth.com)",

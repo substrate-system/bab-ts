@@ -33,6 +33,9 @@ of the download, as they stream in.
   * [Common JS](#common-js)
   * [JS](#js)
   * [pre-built JS](#pre-built-js)
+- [Test](#test)
+  * [Compare](#compare)
+  * [The `compare` script](#the-compare-script)
 
 <!-- tocstop -->
 
